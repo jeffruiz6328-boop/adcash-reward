@@ -1,0 +1,40 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+
+export async function PATCH(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  try {
+    const { userId, action, amount } = await req.json();
+
+    if (action === "ban") {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isBanned: true },
+      });
+    } else if (action === "unban") {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isBanned: false },
+      });
+    } else if (action === "adjust" && typeof amount === "number") {
+      // Set absolute balance
+      await prisma.user.update({
+        where: { id: userId },
+        data: { balance: Math.max(0, amount) },
+      });
+    } else {
+      return NextResponse.json({ error: "Invalid action" }, { status: 400 });
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    return NextResponse.json({ error: "Failed" }, { status: 500 });
+  }
+}
