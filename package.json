@@ -9,7 +9,6 @@
     "dev": "next dev",
     "build": "prisma generate && next build",
     "start": "next start",
-    "lint": "next lint",
     "db:push": "prisma db push",
     "db:seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate || true"
@@ -37,8 +36,6 @@
     "tailwindcss": "3.4.15",
     "postcss": "8.4.49",
     "autoprefixer": "10.4.20",
-    "tsx": "4.19.2",
-    "eslint": "8.57.1",
-    "eslint-config-next": "15.1.0"
+    "tsx": "4.19.2"
   }
 }
