@@ -10,27 +10,39 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const { ticketId, status, adminReply } = await req.json();
+    const { ticketId, status, reply } = await req.json();
 
-    const data: { status?: string; adminReply?: string } = {};
+    if (!ticketId) {
+      return NextResponse.json({ error: "Missing ticketId" }, { status: 400 });
+    }
+
+    if (reply && typeof reply === "string" && reply.trim()) {
+      await prisma.supportReply.create({
+        data: {
+          ticketId,
+          body: reply.trim(),
+          isAdmin: true,
+        },
+      });
+      await prisma.supportTicket.update({
+        where: { id: ticketId },
+        data: {
+          status: status === "closed" ? "closed" : "replied",
+          adminReply: reply.trim(), // keep last reply for compatibility
+        },
+      });
+      return NextResponse.json({ success: true });
+    }
+
     if (status && ["open", "replied", "closed"].includes(status)) {
-      data.status = status;
-    }
-    if (typeof adminReply === "string") {
-      data.adminReply = adminReply;
-      if (!data.status) data.status = "replied";
-    }
-
-    if (Object.keys(data).length === 0) {
-      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
+      await prisma.supportTicket.update({
+        where: { id: ticketId },
+        data: { status },
+      });
+      return NextResponse.json({ success: true });
     }
 
-    await prisma.supportTicket.update({
-      where: { id: ticketId },
-      data,
-    });
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
   } catch (err) {
     console.error(err);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
