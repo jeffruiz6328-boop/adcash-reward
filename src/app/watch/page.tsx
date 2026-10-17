@@ -179,8 +179,8 @@ export default function WatchPage() {
                   ) : (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-white">
                       <AlertCircle className="h-10 w-10 text-amber-400" />
-                      <p className="text-sm text-zinc-300">Playing in timer mode</p>
-                      <p className="text-xs text-zinc-500">Keep this window open until the bar fills</p>
+                      <p className="text-sm text-zinc-300">ads is playing</p>
+                      <p className="text-xs text-zinc-500">Keep watching until the bar fills</p>
                     </div>
                   )}
                   <button onClick={() => setMuted(!muted)} className="absolute bottom-4 right-4 rounded-full bg-black/60 p-2 text-white hover:bg-black/80">
