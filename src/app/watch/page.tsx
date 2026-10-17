@@ -15,6 +15,7 @@ interface Ad {
   reward: number;
   imageUrl: string | null;
   videoUrl: string | null;
+  claimedToday?: boolean;
 }
 
 export default function WatchPage() {
@@ -79,7 +80,7 @@ export default function WatchPage() {
     setProgress(0);
     setCanClaim(false);
     setMessage("");
-    setMuted(true);
+    setMuted(false);
     setUsingTimer(false);
     clearTimer();
 
@@ -137,6 +138,9 @@ export default function WatchPage() {
       const data = await res.json();
       if (res.ok) {
         setMessage("+" + formatCurrency(data.reward) + " added to your balance!");
+        setAds((prev) =>
+          prev.map((a) => (a.id === watching.id ? { ...a, claimedToday: true } : a))
+        );
         closePlayer();
       } else {
         setMessage(data.error || "Failed to claim");
@@ -325,14 +329,21 @@ export default function WatchPage() {
                 <p className="text-sm text-zinc-400 line-clamp-2 mb-4">{ad.description}</p>
                 <div className="flex items-center justify-between">
                   <span className="text-brand-400 font-semibold">{formatCurrency(ad.reward)}</span>
-                  <button
-                    onClick={() => startWatching(ad)}
-                    disabled={!!watching}
-                    className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-black hover:bg-brand-400 disabled:opacity-40"
-                  >
-                    <Play className="h-3.5 w-3.5 fill-current" />
-                    Watch
-                  </button>
+                  {ad.claimedToday ? (
+                    <span className="flex items-center gap-1.5 rounded-lg bg-zinc-800 px-4 py-2 text-sm text-zinc-500">
+                      <CheckCircle className="h-3.5 w-3.5" />
+                      Claimed today
+                    </span>
+                  ) : (
+                    <button
+                      onClick={() => startWatching(ad)}
+                      disabled={!!watching}
+                      className="flex items-center gap-1.5 rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-black hover:bg-brand-400 disabled:opacity-40"
+                    >
+                      <Play className="h-3.5 w-3.5 fill-current" />
+                      Watch
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

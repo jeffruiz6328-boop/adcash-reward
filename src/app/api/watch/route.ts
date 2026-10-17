@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Ad not found or inactive" }, { status: 404 });
     }
 
-    // Prevent claiming the same ad more than once every 24 hours
+    // Same ad only once every 24 hours
     const recent = await prisma.adView.findFirst({
       where: {
         userId: session.user.id,
@@ -31,12 +31,11 @@ export async function POST(req: Request) {
 
     if (recent) {
       return NextResponse.json(
-        { error: "You already claimed this ad in the last 24 hours" },
+        { error: "You already claimed this ad today. Try another one or come back tomorrow." },
         { status: 429 }
       );
     }
 
-    // Create view + update balances in a transaction
     const [view] = await prisma.$transaction([
       prisma.adView.create({
         data: {
