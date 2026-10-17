@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
 import { formatCurrency } from "@/lib/utils";
 import { Bitcoin, CreditCard, Gift, Loader2, AlertCircle } from "lucide-react";
@@ -122,6 +123,14 @@ export default function WithdrawPage() {
             Cash out once you reach the ${minWithdrawal} minimum.
           </p>
         </div>
+
+        <Link
+          href="/withdraw/activate"
+          className="mb-6 flex items-center gap-3 rounded-xl border border-brand-500/30 bg-brand-500/5 px-4 py-3 hover:bg-brand-500/10 transition-colors"
+        >
+          <span className="text-brand-400 font-medium text-sm">Have an activation code?</span>
+          <span className="text-xs text-zinc-500">Enter it here to process your withdrawal →</span>
+        </Link>
 
         <div className="mb-8 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-6 text-center">
           <div className="text-sm text-zinc-400 mb-1">Available Balance</div>

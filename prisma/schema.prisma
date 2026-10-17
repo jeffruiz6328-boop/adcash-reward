@@ -102,6 +102,7 @@ model SupportTicket {
   email     String
   subject   String
   message   String
+  adminReply String?
   status    String   @default("open")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -11,6 +11,26 @@ const schema = z.object({
   message: z.string().min(10).max(2000),
 });
 
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user) {
+    return NextResponse.json({ tickets: [] });
+  }
+
+  const tickets = await prisma.supportTicket.findMany({
+    where: {
+      OR: [
+        { userId: session.user.id },
+        { email: session.user.email || "" },
+      ],
+    },
+    orderBy: { createdAt: "desc" },
+    take: 20,
+  });
+
+  return NextResponse.json({ tickets });
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();

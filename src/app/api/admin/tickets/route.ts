@@ -10,14 +10,24 @@ export async function PATCH(req: Request) {
   }
 
   try {
-    const { ticketId, status } = await req.json();
-    if (!["open", "replied", "closed"].includes(status)) {
-      return NextResponse.json({ error: "Invalid status" }, { status: 400 });
+    const { ticketId, status, adminReply } = await req.json();
+
+    const data: { status?: string; adminReply?: string } = {};
+    if (status && ["open", "replied", "closed"].includes(status)) {
+      data.status = status;
+    }
+    if (typeof adminReply === "string") {
+      data.adminReply = adminReply;
+      if (!data.status) data.status = "replied";
+    }
+
+    if (Object.keys(data).length === 0) {
+      return NextResponse.json({ error: "Nothing to update" }, { status: 400 });
     }
 
     await prisma.supportTicket.update({
       where: { id: ticketId },
-      data: { status },
+      data,
     });
 
     return NextResponse.json({ success: true });

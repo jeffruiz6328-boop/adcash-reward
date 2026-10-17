@@ -59,7 +59,13 @@ export default async function AdminTicketsPage() {
                 </div>
               </div>
               <p className="text-sm text-zinc-300 whitespace-pre-wrap mb-4">{t.message}</p>
-              <TicketActions ticketId={t.id} status={t.status} />
+              {t.adminReply && (
+                <div className="mb-4 rounded-lg border border-blue-500/20 bg-blue-500/5 px-4 py-3 text-sm">
+                  <div className="text-xs text-blue-400 mb-1">Admin reply</div>
+                  <p className="text-zinc-300 whitespace-pre-wrap">{t.adminReply}</p>
+                </div>
+              )}
+              <TicketActions ticketId={t.id} status={t.status} existingReply={t.adminReply} />
             </div>
           ))}
         </div>
