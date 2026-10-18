@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Navbar } from "@/components/Navbar";
+import { FailedWithdrawalPopup } from "@/components/FailedWithdrawalPopup";
 import { formatCurrency } from "@/lib/utils";
 import { Bitcoin, CreditCard, Gift, Loader2, AlertCircle } from "lucide-react";
 
@@ -104,6 +105,7 @@ export default function WithdrawPage() {
     return (
       <div className="min-h-screen">
         <Navbar />
+      <FailedWithdrawalPopup />
         <div className="flex items-center justify-center py-32">
           <Loader2 className="h-8 w-8 animate-spin text-brand-400" />
         </div>

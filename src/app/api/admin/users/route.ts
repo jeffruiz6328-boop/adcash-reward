@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { emailBanned } from "@/lib/email";
 
 export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
@@ -13,17 +14,19 @@ export async function PATCH(req: Request) {
     const { userId, action, amount } = await req.json();
 
     if (action === "ban") {
-      await prisma.user.update({
+      const user = await prisma.user.update({
         where: { id: userId },
         data: { isBanned: true },
       });
+      if (user.email) {
+        emailBanned(user.email).catch(() => {});
+      }
     } else if (action === "unban") {
       await prisma.user.update({
         where: { id: userId },
         data: { isBanned: false },
       });
     } else if (action === "adjust" && typeof amount === "number") {
-      // Set absolute balance
       await prisma.user.update({
         where: { id: userId },
         data: { balance: Math.max(0, amount) },

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+import { emailWelcome } from "@/lib/email";
 
 const schema = z.object({
   name: z.string().min(1).max(100),
@@ -27,7 +28,6 @@ export async function POST(req: Request) {
     const hashed = await bcrypt.hash(password, 10);
     let referredById: string | null = null;
 
-    // Check referral code
     if (referralCode) {
       const referrer = await prisma.user.findUnique({
         where: { referralCode: referralCode.toUpperCase() },
@@ -37,7 +37,6 @@ export async function POST(req: Request) {
       }
     }
 
-    // Create new user
     const newUser = await prisma.user.create({
       data: {
         name,
@@ -48,7 +47,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Give referral bonus to the referrer (amount from settings)
     if (referredById) {
       const setting = await prisma.setting.findUnique({
         where: { key: "referralReward" },
@@ -65,6 +63,8 @@ export async function POST(req: Request) {
         });
       }
     }
+
+    emailWelcome(email, name).catch(() => {});
 
     return NextResponse.json({ success: true });
   } catch (err) {

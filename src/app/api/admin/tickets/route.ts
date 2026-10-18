@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { emailSupportReply } from "@/lib/email";
 
 export async function PATCH(req: Request) {
   const session = await getServerSession(authOptions);
@@ -24,13 +25,21 @@ export async function PATCH(req: Request) {
           isAdmin: true,
         },
       });
-      await prisma.supportTicket.update({
+      const ticket = await prisma.supportTicket.update({
         where: { id: ticketId },
         data: {
           status: status === "closed" ? "closed" : "replied",
-          adminReply: reply.trim(), // keep last reply for compatibility
+          adminReply: reply.trim(),
         },
       });
+
+      if (ticket.email) {
+        emailSupportReply(ticket.email, {
+          subject: ticket.subject,
+          reply: reply.trim(),
+        }).catch(() => {});
+      }
+
       return NextResponse.json({ success: true });
     }
 

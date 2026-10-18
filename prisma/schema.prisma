@@ -18,6 +18,8 @@ model User {
   referredById    String?
   isAdmin         Boolean        @default(false)
   isBanned        Boolean        @default(false)
+  resetToken      String?
+  resetTokenExp   DateTime?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 

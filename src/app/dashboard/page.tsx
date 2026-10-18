@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/Navbar";
+import { FailedWithdrawalPopup } from "@/components/FailedWithdrawalPopup";
 import { formatCurrency } from "@/lib/utils";
 import { DollarSign, TrendingUp, Eye, Wallet, Users, Copy } from "lucide-react";
 import Link from "next/link";
@@ -49,6 +50,7 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen">
       <Navbar />
+      <FailedWithdrawalPopup />
       <main className="mx-auto max-w-6xl px-4 py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-bold">Hey, {user.name || "there"} 👋</h1>
