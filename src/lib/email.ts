@@ -1,50 +1,36 @@
 /**
- * Email via Gmail SMTP (no custom domain needed).
- *
- * In .env / Vercel:
- *   SMTP_USER=yourgmail@gmail.com
- *   SMTP_PASS=xxxx xxxx xxxx xxxx   (Google App Password, not your normal password)
- *   EMAIL_FROM=AdCash Rewards <yourgmail@gmail.com>
- *
- * Setup: Google Account → Security → 2-Step Verification ON → App passwords → Mail
+ * Email via Gmail SMTP.
+ * Env: SMTP_USER, SMTP_PASS, EMAIL_FROM
  */
-
-import nodemailer from "nodemailer";
 
 const SITE_NAME = "AdCash Rewards";
 const SITE_URL = process.env.NEXTAUTH_URL || "https://adcash-reward.vercel.app";
-
-function getTransporter() {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-  if (!user || !pass) return null;
-
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
-    auth: { user, pass },
-  });
-}
 
 export async function sendEmail(opts: {
   to: string;
   subject: string;
   html: string;
 }): Promise<boolean> {
-  const transporter = getTransporter();
+  const user = process.env.SMTP_USER;
+  const pass = process.env.SMTP_PASS;
   const from =
     process.env.EMAIL_FROM ||
-    (process.env.SMTP_USER
-      ? `AdCash Rewards <${process.env.SMTP_USER}>`
-      : null);
+    (user ? `AdCash Rewards <${user}>` : null);
 
-  if (!transporter || !from) {
-    console.log("[email] skipped (set SMTP_USER and SMTP_PASS):", opts.subject, "→", opts.to);
+  if (!user || !pass || !from) {
+    console.log("[email] skipped (no SMTP_USER/SMTP_PASS):", opts.subject, "→", opts.to);
     return false;
   }
 
   try {
+    const nodemailer = await import("nodemailer");
+    const transporter = nodemailer.createTransport({
+      host: "smtp.gmail.com",
+      port: 465,
+      secure: true,
+      auth: { user, pass },
+    });
+
     await transporter.sendMail({
       from,
       to: opts.to,
@@ -97,44 +83,38 @@ export async function emailWithdrawalStatus(
   opts: { amount: number; method: string; status: string; activationCode?: string | null }
 ) {
   const amount = `$${Number(opts.amount).toFixed(2)}`;
-  const method = opts.method;
-
   if (opts.status === "rejected") {
     return sendEmail({
       to,
       subject: `Withdrawal failed – ${SITE_NAME}`,
       html: layout(
         "Withdrawal Failed",
-        `<p>Your withdrawal of <strong>${amount}</strong> (${method}) could not be completed.</p>
-         <p>Please contact support for more information. Your balance has been restored if applicable.</p>
+        `<p>Your withdrawal of <strong>${amount}</strong> (${opts.method}) could not be completed.</p>
+         <p>Please contact support for more information.</p>
          <p><a href="${SITE_URL}/support" style="color:#22c55e;">Contact Support</a></p>`
       ),
     });
   }
-
   if (opts.status === "approved") {
     return sendEmail({
       to,
       subject: `Withdrawal successful – ${SITE_NAME}`,
       html: layout(
         "Withdrawal Successful",
-        `<p>Your withdrawal of <strong>${amount}</strong> via <strong>${method}</strong> was successful.</p>
-         <p>Funds should arrive according to your payment method's processing time.</p>`
+        `<p>Your withdrawal of <strong>${amount}</strong> via <strong>${opts.method}</strong> was successful.</p>`
       ),
     });
   }
-
   if (opts.status === "processing") {
     return sendEmail({
       to,
       subject: `Withdrawal processing – ${SITE_NAME}`,
       html: layout(
         "Withdrawal Processing",
-        `<p>Your withdrawal of <strong>${amount}</strong> (${method}) is now being processed.</p>`
+        `<p>Your withdrawal of <strong>${amount}</strong> (${opts.method}) is now being processed.</p>`
       ),
     });
   }
-
   return false;
 }
 
@@ -147,23 +127,20 @@ export async function emailActivationCode(
     subject: `Your activation code – ${SITE_NAME}`,
     html: layout(
       "Activation Code",
-      `<p>Use this code to process your withdrawal of <strong>$${Number(opts.amount).toFixed(2)}</strong> (${opts.method}):</p>
+      `<p>Use this code for your withdrawal of <strong>$${Number(opts.amount).toFixed(2)}</strong> (${opts.method}):</p>
        <p style="font-size:22px;letter-spacing:3px;font-family:monospace;background:#09090b;padding:14px;border-radius:8px;text-align:center;color:#22c55e;"><strong>${opts.code}</strong></p>
        <p><a href="${SITE_URL}/withdraw/activate" style="display:inline-block;background:#22c55e;color:#000;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">Enter Code</a></p>`
     ),
   });
 }
 
-export async function emailSupportReply(
-  to: string,
-  opts: { subject: string; reply: string }
-) {
+export async function emailSupportReply(to: string, opts: { subject: string; reply: string }) {
   return sendEmail({
     to,
     subject: `Support reply: ${opts.subject}`,
     html: layout(
       "Support Reply",
-      `<p>You received a reply about: <strong>${opts.subject}</strong></p>
+      `<p>Reply about: <strong>${opts.subject}</strong></p>
        <div style="background:#09090b;border:1px solid #27272a;border-radius:8px;padding:14px;margin:12px 0;color:#d4d4d8;white-space:pre-wrap;">${opts.reply}</div>
        <p><a href="${SITE_URL}/support" style="color:#22c55e;">View conversation</a></p>`
     ),
@@ -190,8 +167,7 @@ export async function emailPasswordReset(to: string, resetUrl: string) {
       "Reset Password",
       `<p>We received a request to reset your password.</p>
        <p><a href="${resetUrl}" style="display:inline-block;background:#22c55e;color:#000;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">Reset Password</a></p>
-       <p style="font-size:13px;color:#a1a1aa;">This link expires in 1 hour. If you did not request this, you can ignore this email.</p>
-       <p style="font-size:12px;color:#71717a;word-break:break-all;">Or copy: ${resetUrl}</p>`
+       <p style="font-size:13px;color:#a1a1aa;">This link expires in 1 hour.</p>`
     ),
   });
 }
