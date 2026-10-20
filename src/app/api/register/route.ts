@@ -64,7 +64,11 @@ export async function POST(req: Request) {
       }
     }
 
-    emailWelcome(email, name).catch(() => {});
+    try {
+      await emailWelcome(email, name);
+    } catch (e) {
+      console.error("welcome email failed", e);
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

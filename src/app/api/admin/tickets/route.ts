@@ -34,10 +34,14 @@ export async function PATCH(req: Request) {
       });
 
       if (ticket.email) {
-        emailSupportReply(ticket.email, {
-          subject: ticket.subject,
-          reply: reply.trim(),
-        }).catch(() => {});
+        try {
+          await emailSupportReply(ticket.email, {
+            subject: ticket.subject,
+            reply: reply.trim(),
+          });
+        } catch (e) {
+          console.error("support email failed", e);
+        }
       }
 
       return NextResponse.json({ success: true });

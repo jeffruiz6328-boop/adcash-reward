@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { emailWithdrawalStatus } from "@/lib/email";
 
 async function getMinWithdrawal() {
   const setting = await prisma.setting.findUnique({ where: { key: "minWithdrawal" } });
@@ -80,6 +81,19 @@ export async function POST(req: Request) {
         },
       }),
     ]);
+
+    // Under review email
+    if (user.email) {
+      try {
+        await emailWithdrawalStatus(user.email, {
+          amount,
+          method,
+          status: "pending",
+        });
+      } catch (e) {
+        console.error("pending withdrawal email failed", e);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (err) {

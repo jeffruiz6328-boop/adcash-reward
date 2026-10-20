@@ -23,7 +23,6 @@ export async function sendEmail(opts: {
   }
 
   try {
-    // Dynamic import + external package so Next/webpack does not break the build
     const nodemailer = await import("nodemailer");
     const transporter = nodemailer.createTransport({
       host: "smtp.gmail.com",
@@ -65,7 +64,9 @@ export async function emailWelcome(to: string, name?: string | null) {
     subject: `Welcome to ${SITE_NAME}`,
     html: layout(
       "Welcome!",
-      `<p>Hi ${name || "there"},</p><p>Your account is ready. Watch ads, complete tasks, and withdraw via PayPal, Bitcoin, or gift cards.</p>
+      `<p>Hi ${name || "there"},</p>
+       <p>Thanks for joining <strong>${SITE_NAME}</strong>. Your account is ready.</p>
+       <p>Watch ads, complete tasks, invite friends, and withdraw via PayPal, Bitcoin, or gift cards.</p>
        <p><a href="${SITE_URL}/dashboard" style="display:inline-block;background:#22c55e;color:#000;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">Go to Dashboard</a></p>`
     ),
   });
@@ -76,38 +77,60 @@ export async function emailWithdrawalStatus(
   opts: { amount: number; method: string; status: string; activationCode?: string | null }
 ) {
   const amount = `$${Number(opts.amount).toFixed(2)}`;
-  if (opts.status === "rejected") {
+  const method = opts.method;
+
+  if (opts.status === "pending") {
     return sendEmail({
       to,
-      subject: `Withdrawal failed – ${SITE_NAME}`,
+      subject: `Withdrawal under review – ${SITE_NAME}`,
       html: layout(
-        "Withdrawal Failed",
-        `<p>Your withdrawal of <strong>${amount}</strong> (${opts.method}) could not be completed.</p>
-         <p>Please contact support for more information.</p>
-         <p><a href="${SITE_URL}/support" style="color:#22c55e;">Contact Support</a></p>`
+        "Withdrawal Under Review",
+        `<p>We received your withdrawal request of <strong>${amount}</strong> via <strong>${method}</strong>.</p>
+         <p>Your request is <strong>under review</strong>. We will email you when the status changes.</p>
+         <p><a href="${SITE_URL}/withdraw" style="color:#22c55e;">View withdrawals</a></p>`
       ),
     });
   }
-  if (opts.status === "approved") {
-    return sendEmail({
-      to,
-      subject: `Withdrawal successful – ${SITE_NAME}`,
-      html: layout(
-        "Withdrawal Successful",
-        `<p>Your withdrawal of <strong>${amount}</strong> via <strong>${opts.method}</strong> was successful.</p>`
-      ),
-    });
-  }
+
   if (opts.status === "processing") {
     return sendEmail({
       to,
       subject: `Withdrawal processing – ${SITE_NAME}`,
       html: layout(
         "Withdrawal Processing",
-        `<p>Your withdrawal of <strong>${amount}</strong> (${opts.method}) is now being processed.</p>`
+        `<p>Your withdrawal of <strong>${amount}</strong> (${method}) is now <strong>processing</strong>.</p>
+         <p>If you receive an activation code, enter it on the site to continue.</p>
+         <p><a href="${SITE_URL}/withdraw/activate" style="display:inline-block;background:#22c55e;color:#000;padding:10px 18px;border-radius:8px;text-decoration:none;font-weight:600;">Enter activation code</a></p>`
       ),
     });
   }
+
+  if (opts.status === "rejected") {
+    return sendEmail({
+      to,
+      subject: `Withdrawal failed – ${SITE_NAME}`,
+      html: layout(
+        "Withdrawal Failed",
+        `<p>Your withdrawal of <strong>${amount}</strong> (${method}) could not be completed.</p>
+         <p>Please contact support for more information. Your balance has been restored if applicable.</p>
+         <p><a href="${SITE_URL}/support" style="color:#22c55e;">Contact Support</a></p>`
+      ),
+    });
+  }
+
+  if (opts.status === "approved") {
+    return sendEmail({
+      to,
+      subject: `Withdrawal successful – ${SITE_NAME}`,
+      html: layout(
+        "Withdrawal Successful",
+        `<p>Your withdrawal of <strong>${amount}</strong> via <strong>${method}</strong> was <strong>successful</strong>.</p>
+         <p>Funds should arrive according to your payment method’s processing time.</p>
+         <p><a href="${SITE_URL}/dashboard" style="color:#22c55e;">Go to Dashboard</a></p>`
+      ),
+    });
+  }
+
   return false;
 }
 

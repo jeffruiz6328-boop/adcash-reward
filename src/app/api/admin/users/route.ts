@@ -19,7 +19,11 @@ export async function PATCH(req: Request) {
         data: { isBanned: true },
       });
       if (user.email) {
-        emailBanned(user.email).catch(() => {});
+        try {
+          await emailBanned(user.email);
+        } catch (e) {
+          console.error("ban email failed", e);
+        }
       }
     } else if (action === "unban") {
       await prisma.user.update({

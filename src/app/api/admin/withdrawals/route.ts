@@ -40,14 +40,27 @@ export async function PATCH(req: Request) {
         where: { id: withdrawalId },
         data: { activationCode: code },
       });
+
+      // Await email so Vercel does not kill the function before it sends
+      let emailSent = false;
       if (userEmail) {
-        emailActivationCode(userEmail, {
-          amount: withdrawal.amount,
-          method: withdrawal.method,
-          code,
-        }).catch(() => {});
+        try {
+          emailSent = await emailActivationCode(userEmail, {
+            amount: withdrawal.amount,
+            method: withdrawal.method,
+            code,
+          });
+        } catch (e) {
+          console.error("activation email failed", e);
+        }
       }
-      return NextResponse.json({ success: true, activationCode: code });
+
+      return NextResponse.json({
+        success: true,
+        activationCode: code,
+        emailSent,
+        emailTo: userEmail || null,
+      });
     }
 
     if (status && ["pending", "processing", "approved", "rejected"].includes(status)) {
@@ -69,13 +82,17 @@ export async function PATCH(req: Request) {
         });
       }
 
-      if (userEmail && ["approved", "rejected", "processing"].includes(status)) {
-        emailWithdrawalStatus(userEmail, {
-          amount: withdrawal.amount,
-          method: withdrawal.method,
-          status,
-          activationCode: withdrawal.activationCode,
-        }).catch(() => {});
+      if (userEmail && ["pending", "approved", "rejected", "processing"].includes(status)) {
+        try {
+          await emailWithdrawalStatus(userEmail, {
+            amount: withdrawal.amount,
+            method: withdrawal.method,
+            status,
+            activationCode: withdrawal.activationCode,
+          });
+        } catch (e) {
+          console.error("status email failed", e);
+        }
       }
 
       return NextResponse.json({ success: true });
